@@ -1,6 +1,6 @@
 ---
-layout: page
-title: About
+layout: default
+title: Home
 ---
 
 Hey there! This is Rohit Varkey Thankachan's blog, a Computer Science Masters student at [Georgia Tech](http://www.gatech.edu/).
@@ -19,3 +19,4 @@ You can also find me on :
 * [LinkedIn](https://www.linkedin.com/in/rohitvarkey)
 
 This blog is built using [Jekyll](http://jekyllrb.com) using the brilliant [Hyde](http://hyde.getpoole.com) theme and hosted on [Github Pages](http://pages.github.com)!
+
