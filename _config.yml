@@ -2,9 +2,9 @@
 permalink:        pretty
 
 # Setup
-title:            Chirag Jamadagni's Website!
+title:            Chirag Jamadagni
 tagline:          'cjamadagni authors here'
-description:      'I read about code. Write a little of it too! This blog lists my experiences while playing with code.'
+description:      'Computer Science Grad Student'
 url:              http://cjamadagni.github.io
 baseurl:          /
 
