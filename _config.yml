@@ -2,13 +2,15 @@
 permalink:        pretty
 
 # Setup
+title:            Chirag Jamadagni
+description:      '                                                                                                                            '
 url:              http://cjamadagni.github.io
 baseurl:          /
 
 
 author:
   name:           'Chirag Jamadagni'
-  url:            https://linkedin.com/in/cjamadagni
+  url:            https://twitter.com/rohitvarkey
 
 
 # Custom vars
