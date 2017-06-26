@@ -1,23 +1,445 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
- <title>Rohit Varkey Thankachan's blog!</title>
- <link href="http://rohitvarkey.github.io/atom.xml" rel="self"/>
- <link href="http://rohitvarkey.github.io/"/>
- <updated>2016-09-13T23:37:39-04:00</updated>
- <id>http://rohitvarkey.github.io</id>
+ <title>Chirag Jamadagni's Website!</title>
+ <link href="http://cjamadagni.github.io/atom.xml" rel="self"/>
+ <link href="http://cjamadagni.github.io/"/>
+ <updated>2017-06-26T23:30:07+05:30</updated>
+ <id>http://cjamadagni.github.io</id>
  <author>
-   <name>Rohit Varkey Thankachan</name>
+   <name>Chirag Jamadagni</name>
    <email></email>
  </author>
 
  
  <entry>
+   <title>StingerWrapper.jl - Part 3</title>
+   <link href="http://cjamadagni.github.io/2016/09/21/stingerwrapper-3/"/>
+   <updated>2016-09-21T00:00:00+05:30</updated>
+   <id>http://cjamadagni.github.io/2016/09/21/stingerwrapper-3</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;This post is the third among a series of blog posts describing my
+experiences while developing &lt;a href=&quot;https://github.com/rohitvarkey/StingerWrapper.jl&quot;&gt;StingerWrapper.jl&lt;/a&gt;,
+a Julia interface to the &lt;a href=&quot;https://github.com/stingergraph/stinger/&quot;&gt;STINGER&lt;/a&gt;
+C package for dynamic graph analysis. I have been working on StingerWrapper along
+with Dr. James Fairbanks.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;In part 1 and part 2, we looked at how we could interact between Julia and C,
+including methods of loading and storing data between the 2 languages. As explained
+in part 2, we decided to use a lazy approach to accessing data from C and only
+load/store the required field instead of the whole object. In this post, we
+will look at how we can abstract away the &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt;
+functions from users and let them use Julia like syntax to access attributes.&lt;/p&gt;
+
+&lt;p&gt;Initially, we planned to overload the &lt;code class=&quot;highlighter-rouge&quot;&gt;getfield&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;setfield&lt;/code&gt; functions to
+make accessors on the &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; wrapper type, make the calls to &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt;
+and &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt;. This would have let us use the normal Julia &lt;code class=&quot;highlighter-rouge&quot;&gt;a.b&lt;/code&gt; syntax to
+access fields. However, Julia does not allow overloading these core functions yet (&lt;a href=&quot;https://github.com/JuliaLang/julia/issues/1974&quot;&gt;JuliaLang/julia#1974&lt;/a&gt;). Had this
+been possible, we could have allowed users to use a workflow like&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;julia
+s = Stinger()
+s.max_nv = 100000 #setfield! - Should end up reflecting in C
+s.max_nv #getfield! - Reads 100000 from C
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Julia does let us overload the &lt;code class=&quot;highlighter-rouge&quot;&gt;getindex&lt;/code&gt; and the &lt;code class=&quot;highlighter-rouge&quot;&gt;setindex!&lt;/code&gt; functions though.
+These functions are called when the syntax &lt;code class=&quot;highlighter-rouge&quot;&gt;a[b]&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;a[b] = 1&lt;/code&gt; are used.
+Overloading these functions, we can provide users with the ability to access
+&lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt; fields from the &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; wrapper type using the indexing syntax.
+Julia language interop packages such as &lt;a href=&quot;https://github.com/JuliaPy/PyCall.jl&quot;&gt;PyCall.jl&lt;/a&gt;
+uses this method to provide syntactic sugar to their users. Following the PyCall
+implementation, we can let users use &lt;code class=&quot;highlighter-rouge&quot;&gt;Symbol&lt;/code&gt;s to access the fields.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;julia
+s = Stinger()
+s[:max_nv] = 100000 #setindex! - Should end up reflecting in C
+s[:max_nv] #getindex! - Should read latest value from C
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Unlike PyCall.jl which has to support generality, we know exactly what fields of
+the &lt;code class=&quot;highlighter-rouge&quot;&gt;StingerGraph&lt;/code&gt; type we need to expose to users. So we declared an
+&lt;code class=&quot;highlighter-rouge&quot;&gt;Enum&lt;/code&gt; using the &lt;code class=&quot;highlighter-rouge&quot;&gt;@enum&lt;/code&gt; for all the fields that we need to expose. Leveraging
+meta-programming made writing the &lt;code class=&quot;highlighter-rouge&quot;&gt;@enum&lt;/code&gt; call much easier too :).
+This allows dispatching on this &lt;code class=&quot;highlighter-rouge&quot;&gt;Enum&lt;/code&gt; type (which we named &lt;code class=&quot;highlighter-rouge&quot;&gt;StingerFields&lt;/code&gt;) for
+&lt;code class=&quot;highlighter-rouge&quot;&gt;getindex&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;setindex!&lt;/code&gt; with the following advantages:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Invalid fields error out naturally. No explicit check is required to confirm if
+the &lt;code class=&quot;highlighter-rouge&quot;&gt;Symbol&lt;/code&gt; is part of the names of the fields in &lt;code class=&quot;highlighter-rouge&quot;&gt;StingerGraph&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;We can encode the offsets from the base pointer required to load each field as
+the value of the &lt;code class=&quot;highlighter-rouge&quot;&gt;Enum&lt;/code&gt; instance. An example &lt;code class=&quot;highlighter-rouge&quot;&gt;getindex&lt;/code&gt; implementation is given below.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;julia
+function getindex(x::Stinger, field::StingerFields)
+    idx = Int(field)
+    basepointer = convert(Ptr{fieldtype(StingerGraph, idx)}, x.handle)
+    unsafe_load(basepointer, idx)
+end
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The type introspection at runtime is required as there are 2 fields in &lt;code class=&quot;highlighter-rouge&quot;&gt;StingerGraph&lt;/code&gt;,
+&lt;code class=&quot;highlighter-rouge&quot;&gt;batch_time&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;update_time&lt;/code&gt;, that are &lt;code class=&quot;highlighter-rouge&quot;&gt;Float64&lt;/code&gt;s while all the others fields
+are &lt;code class=&quot;highlighter-rouge&quot;&gt;Int64&lt;/code&gt;s. This introduces a type instability that can cause potential
+performance bottlenecks. Rather than taking this performance hit to allow for
+rarely used fields such as &lt;code class=&quot;highlighter-rouge&quot;&gt;batch_time&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;update_time&lt;/code&gt;, we implemented special
+getter functions for them. We &lt;a href=&quot;https://github.com/rohitvarkey/StingerWrapper.jl/commit/c78f3d7d54590e9e44ca4c9dc4a3e776c407bc5a&quot;&gt;benchmarked&lt;/a&gt; both these versions of &lt;code class=&quot;highlighter-rouge&quot;&gt;getindex&lt;/code&gt;
+with the following results for 10000000 samples.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;getindex&lt;/code&gt; Type&lt;/th&gt;
+      &lt;th&gt;minimum time&lt;/th&gt;
+      &lt;th&gt;median time&lt;/th&gt;
+      &lt;th&gt;mean time&lt;/th&gt;
+      &lt;th&gt;maximum time&lt;/th&gt;
+      &lt;th&gt;memory estimate&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Type unstable&lt;/td&gt;
+      &lt;td&gt;366.00 ns (0.00% GC)&lt;/td&gt;
+      &lt;td&gt;398.00 ns (0.00% GC)&lt;/td&gt;
+      &lt;td&gt;433.29 ns (1.10% GC)&lt;/td&gt;
+      &lt;td&gt;14.44 ms (99.79% GC)&lt;/td&gt;
+      &lt;td&gt;32.00 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Type stable&lt;/td&gt;
+      &lt;td&gt;38.00 ns (0.00% GC)&lt;/td&gt;
+      &lt;td&gt;41.00 ns (0.00% GC)&lt;/td&gt;
+      &lt;td&gt;43.95 ns (0.00% GC)&lt;/td&gt;
+      &lt;td&gt;219.11 μs (0.00% GC)&lt;/td&gt;
+      &lt;td&gt;0.00 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;These results show an order of magnitute reduction in latency for these core
+operations and completely eliminate the need for memory allocation and garbage collection.
+Finally, the syntax users can use to get or set fields on the &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; wrapper
+time is&lt;/p&gt;
+
+&lt;p&gt;```julia
+s = Stinger()&lt;/p&gt;
+
+&lt;h1 id=&quot;general-field-access&quot;&gt;General field access&lt;/h1&gt;
+&lt;p&gt;s[max_nv] = 100000
+s[max_nv]&lt;/p&gt;
+
+&lt;h1 id=&quot;specialized-methods-for-batchtime-and-updatetime&quot;&gt;Specialized methods for &lt;code class=&quot;highlighter-rouge&quot;&gt;batch_time&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;update_time&lt;/code&gt;&lt;/h1&gt;
+&lt;p&gt;s[batch_time] #Error
+get_batchtime(s) #Loads the batch time.
+```&lt;/p&gt;
+
+&lt;p&gt;We will be working on setting up benchmarks and implementing a BFS implementation
+in the next week.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>StingerWrapper.jl - Part 2</title>
+   <link href="http://cjamadagni.github.io/2016/09/20/stingerwrapper-2/"/>
+   <updated>2016-09-20T00:00:00+05:30</updated>
+   <id>http://cjamadagni.github.io/2016/09/20/stingerwrapper-2</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;This post is the second among a series of blog posts describing my
+experiences while developing &lt;a href=&quot;https://github.com/rohitvarkey/StingerWrapper.jl&quot;&gt;StingerWrapper.jl&lt;/a&gt;,
+a Julia interface to the &lt;a href=&quot;https://github.com/stingergraph/stinger/&quot;&gt;STINGER&lt;/a&gt;
+C package for dynamic graph analysis. I have been working on StingerWrapper along
+with Dr. James Fairbanks.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;In this blog post, I will describe our experiments with loading and storing
+C variables in Julia and the design decisions we made regarding this in StingerWrapper.jl.&lt;/p&gt;
+
+&lt;p&gt;As I mentioned in Part 1, we had to use a &lt;code class=&quot;highlighter-rouge&quot;&gt;Ptr{Void}&lt;/code&gt; pointer  as a handle to
+refer to the C STINGER object. However, we wanted to offer a Julia like syntax for
+users to examine values and set values of the STINGER object rather than working
+directly with the pointer.&lt;/p&gt;
+
+&lt;p&gt;The first step was to figure out how we could load values pointed to by
+C pointers into Julia. We found the &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt; functions (&lt;a href=&quot;http://docs.julialang.org/en/release-0.4/manual/calling-c-and-fortran-code/#accessing-data-through-a-pointer&quot;&gt;docs&lt;/a&gt;) which lets you access data from pointers.
+&lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; lets you pass in a pointer and Julia will attempt to load an
+object from that depending on the type parameter of the &lt;code class=&quot;highlighter-rouge&quot;&gt;Ptr&lt;/code&gt; passed into it. It
+also lets you specify an index to act as an offset. &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt; attempts to
+store the value passed in into the memory pointed to by the &lt;code class=&quot;highlighter-rouge&quot;&gt;Ptr&lt;/code&gt;. The use of
+both of these functions is considered unsafe as undefined behavior occurs if the
+memory is not valid when accessed. (Julia will probably segfault).&lt;/p&gt;
+
+&lt;p&gt;At this point, we had 2 options.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Write a Julia type mapping the &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; C structure and attempt to load that.&lt;/li&gt;
+  &lt;li&gt;Hand code &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt; for every field.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;We weren’t sure if option 1 would work because of the unknown sized arrays at the
+end of the &lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt; C structure definition. It wasn’t clear if Julia could automatically
+decode C structures which had complete mappings between Julia and C &lt;a href=&quot;[http://docs.julialang.org/en/release-0.5/manual/calling-c-and-fortran-code/#mapping-c-types-to-julia]&quot;&gt;either&lt;/a&gt;.
+In order to figure out these questions, we decided to write a few tests and check
+how Julia performs in these situations. We tried to see if &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; and
+&lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt; would work in the following cases:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;A C structure with a complete Julia type mapping.&lt;/li&gt;
+  &lt;li&gt;A C structure with an unknown array at the end and a Julia mapping leaving
+out the unknown array.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Both of these implementations work, as shown by this &lt;a href=&quot;https://github.com/rohitvarkey/Julia-C-Experiments&quot;&gt;experiment&lt;/a&gt;. So, we implemented a Julia mapping
+for the &lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt; C structure leaving out the unknown array. Now, we
+could do a &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; on the pointer handle to the &lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt; C object, to
+load a representation in Julia. We could then modify it and use &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_store!&lt;/code&gt;
+to write it back to C. A workflow such as the following was possible at this
+point.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;julia
+s = Stinger() #Creating a `Stinger` object with a handle to the `STINGER` C pointer
+#The convert is required to tell Julia to decode as a `StingerGraph`
+sgraph = unsafe_load(convert(Ptr{StingerGraph}, s.handle))
+#Attributes available using normal Julia syntax to perform gets and sets on.
+sgraph.max_nv = 100000
+unsafe_store!((convert(Ptr{StingerGraph}, s.handle), s)
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Integrating this functionality with the wrapper type we
+created in part 1 was our next goal. Here, we had to deal with a major restriction
+that is brought about when working with a Julia type that has an incomplete
+mapping to the C type like &lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt;, i.e, &lt;strong&gt;Memory MUST be allocated in C.&lt;/strong&gt;
+This restriction is enforced because &lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt;’s’ C internal functions make use
+of the unknown size arrays, which will not be allocated if we let Julia handle
+the memory allocation. A handle to the C allocated memory &lt;strong&gt;MUST&lt;/strong&gt; be maintained
+to be able to address this memory from Julia.&lt;/p&gt;
+
+&lt;p&gt;A major design decision at this point was:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Should we always maintain a Julia representation of the &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; C object
+using an eager approach?&lt;/li&gt;
+  &lt;li&gt;Or should we only load the representation on demand using a lazy approach?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;When using the eager approach, even though we can decode the C structure using a
+pointer to a type in Julia, this does not update when the C memory updates. This puts
+the onus on the package to maintain some sort of consistency with the C memory.
+This could be done by making sure to do an &lt;code class=&quot;highlighter-rouge&quot;&gt;unsafe_load&lt;/code&gt; every time a &lt;code class=&quot;highlighter-rouge&quot;&gt;ccall&lt;/code&gt;
+occurs. On using a lazy approach, we have the additional overhead of having to
+load the memory when the user is trying to access it, rather than having an already
+loaded object in Julia memory that can be accessed.&lt;/p&gt;
+
+&lt;p&gt;We explored the trade-offs that were occurring here in terms of complexity
+with respect to &lt;code class=&quot;highlighter-rouge&quot;&gt;ccalls&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;loads&lt;/code&gt; and summarized them in the following
+table.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Operation&lt;/th&gt;
+      &lt;th&gt;Eager&lt;/th&gt;
+      &lt;th&gt;Lazy&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;getfields&lt;/td&gt;
+      &lt;td&gt;Already cached&lt;/td&gt;
+      &lt;td&gt;Has to do a load&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;setfields&lt;/td&gt;
+      &lt;td&gt;Store to pointer&lt;/td&gt;
+      &lt;td&gt;Store to pointer&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ccalls&lt;/td&gt;
+      &lt;td&gt;Has to be updated after every &lt;code class=&quot;highlighter-rouge&quot;&gt;ccall&lt;/code&gt;. Loads occurring for every &lt;code class=&quot;highlighter-rouge&quot;&gt;ccall&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;No op&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Using this table, it was obvious that had to choose between a design depending on
+the number of  &lt;code class=&quot;highlighter-rouge&quot;&gt;ccalls&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;getfields&lt;/code&gt; expected.
+We modeled the time taken for set, load and ccalls in the following equation.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;T = αS + βL + γC&lt;/code&gt;, where S - number of sets, L - number of loads, C - number of ccalls&lt;/p&gt;
+
+&lt;p&gt;For the eager approach:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;S = SF, number of setfields&lt;/li&gt;
+  &lt;li&gt;L = C, number of ccalls&lt;/li&gt;
+  &lt;li&gt;C = C&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Te = αSF + βC + γC&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;For the lazy approach:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;S = SF, number of setfields&lt;/li&gt;
+  &lt;li&gt;L = GF, number of getfields&lt;/li&gt;
+  &lt;li&gt;C = C&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Tl = αSF + βCF + γC&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Te - Tl = β(C - GF)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The workflow we expect from the user will
+generally contain more &lt;code class=&quot;highlighter-rouge&quot;&gt;ccalls&lt;/code&gt; than &lt;code class=&quot;highlighter-rouge&quot;&gt;getfields&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;
+G &amp;gt; CF
+=&amp;gt; Tl &amp;lt; Te
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Hence, we decided to use the lazy approach.&lt;/p&gt;
+
+&lt;p&gt;We had one final design decision to make regarding the mapping.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;On a &lt;code class=&quot;highlighter-rouge&quot;&gt;getfield&lt;/code&gt; or a &lt;code class=&quot;highlighter-rouge&quot;&gt;setfield&lt;/code&gt;, should we load/store the entire Julia representation to C?&lt;/li&gt;
+  &lt;li&gt;Or just load/store only the attribute that was demanded?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;STINGER&lt;/code&gt; C structure
+is not expected to change and we know the offsets for every field. Using the
+entire Julia representation to store/load requires more memory transfer than just
+storing/loading one field. We debated on whether loading the entire structure
+would help with the caching, but figured that due to the temporal and spatial nature
+of caches, loading just a field would also give us this favorable behavior.&lt;/p&gt;
+
+&lt;p&gt;In the next part, we will look at how we can provide users with a clean interface
+to access the fields of a &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; object and perform get and set operations.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>StingerWrapper.jl - Part 1</title>
+   <link href="http://cjamadagni.github.io/2016/09/14/stingerwrapper-1/"/>
+   <updated>2016-09-14T00:00:00+05:30</updated>
+   <id>http://cjamadagni.github.io/2016/09/14/stingerwrapper-1</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;This post will be the first among a series of blog posts describing my
+experiences while developing &lt;a href=&quot;https://github.com/rohitvarkey/StingerWrapper.jl&quot;&gt;StingerWrapper.jl&lt;/a&gt;,
+a Julia interface to the &lt;a href=&quot;https://github.com/stingergraph/stinger/&quot;&gt;STINGER&lt;/a&gt;
+C package for dynamic graph analysis. I have been working on StingerWrapper along
+with Dr. James Fairbanks.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;In this blog post, I will describe our experiments with mapping C structures to
+Julia types and the design decisions we made to provide a Julia API to the STINGER
+C library.&lt;/p&gt;
+
+&lt;h3 id=&quot;julia-and-c&quot;&gt;Julia and C&lt;/h3&gt;
+
+&lt;p&gt;Julia provides a C foreign function interface (FFI) to call C functions exposed
+through a shared library. Using &lt;code class=&quot;highlighter-rouge&quot;&gt;ccall&lt;/code&gt;s as documented &lt;a href=&quot;http://docs.julialang.org/en/release-0.5/manual/calling-c-and-fortran-code/&quot;&gt;here&lt;/a&gt;, let’s us call C
+functions while passing in the required parameters. Julia has a mapping of its
+internal types to C which can be seen here and automatically casts the Julia
+types to the C types. The &lt;code class=&quot;highlighter-rouge&quot;&gt;ccall&lt;/code&gt; syntax is pretty long and easy to get
+wrong for untrained users. Writing a Julia function to abstract away this ccall
+from the users would be the first step to providing a Julia API to the C library.
+For example, the &lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt; function is much easier for an end user to think about.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;julia
+import Libdl: dlopen, dlsym
+libtest = dlopen(&quot;shared_library_name&quot;) #Open a shared library in Julia
+function add(a::Int32, b::Float32)
+    ccall(dlsym(libtest, :add_nums), Float32, (Int32, Float32), (1, 2))
+end
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Julia also supports direct C structs mappings. Just defining a immutable
+composite Julia type with the attributes and types of the C struct, let’s Julia
+decode these structures. This means you can create objects in Julia, pass them to
+C, let C do its thing and get it back to Julia.&lt;/p&gt;
+
+&lt;p&gt;```c
+struct foo {
+    int a;
+    float b;
+}&lt;/p&gt;
+
+&lt;p&gt;float sum(struct foo bar){
+    return bar.a + bar.b;
+}
+```&lt;/p&gt;
+
+&lt;p&gt;```julia
+immutable Foo
+    a::Int32
+    b::Float32
+end&lt;/p&gt;
+
+&lt;p&gt;bar = Foo(1, 2.0)
+ccall(dlsym(libtest, :sum), Float32, (Foo,), bar) #Returns 3.0!
+```&lt;/p&gt;
+
+&lt;p&gt;However, there are a few restrictions. For example,  Julia does not support arrays
+of unknown sizes. And the Stinger C struct has a zero size array allocated to it.
+This stops us from using this clean method to work with the Stinger C structure.
+:sad:&lt;/p&gt;
+
+&lt;p&gt;As we can’t make a Julia type with all the mappings to the Stinger C structure,
+the approach we ended up using was to hand over the memory allocation parts to C
+and keep a reference to that memory using a pointer in Julia as a handle to the
+STINGER C object. To facilitate this, we created a wrapper type to just store the
+handle to the pointer returned from C. We store this as a &lt;code class=&quot;highlighter-rouge&quot;&gt;Ptr{Void}&lt;/code&gt;, because well,
+“when in doubt, use void pointers!” - James.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;julia
+type Stinger
+    handle::Ptr{Void}
+end
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;We defined the constructor of &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; to call the C memory allocator for a STINGER C
+structure on initialization of a &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger&lt;/code&gt; type in Julia. This let’s users just
+say &lt;code class=&quot;highlighter-rouge&quot;&gt;Stinger()&lt;/code&gt; and the C memory is allocated and the pointer is stored as the handle
+attribute.&lt;/p&gt;
+
+&lt;p&gt;Now that we’ve allocated memory, we need to free it too! A Julia &lt;a href=&quot;http://docs.julialang.org/en/release-0.5/stdlib/base/?highlight=finalizer#Base.finalizer&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;finalizer&lt;/code&gt;&lt;/a&gt;
+is registered that takes care of this. It ensures that the calls the corresponding
+free function in C when the Julia garbage collector gets around to it. All of this
+occurs transparently to the user, who does not need to worry about memory
+management. Our wrapper type now looks like this.&lt;/p&gt;
+
+&lt;p&gt;```julia
+type Stinger
+    handle::Ptr{Void}&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#Default constructor to create a Stinger data structure
+function Stinger()
+    s = new(ccall(dlsym(stinger_core_lib, &quot;stinger_new&quot;), Ptr{Void}, ()))
+    finalizer(s, stinger_free)
+    s
+end end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;function stinger_free(x::Stinger)
+    # To prevent segfaults
+    if x.handle != C_NULL
+        x.handle = ccall(dlsym(stinger_core_lib, “stinger_free”), Ptr{Void}, (Ptr{Void},), x)
+    end
+end
+```&lt;/p&gt;
+
+&lt;p&gt;This basic definition will let us write convenience wrapper functions
+that make &lt;code class=&quot;highlighter-rouge&quot;&gt;ccall&lt;/code&gt;s to the STINGER C library. However, it is limited in terms of
+being able to access or modify data directly from Julia and basically forces
+us to call C to do anything useful. We will look at ways in which we can expose
+the data to users in better way in part 2.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>Hello World!</title>
-   <link href="http://rohitvarkey.github.io/2014/12/08/hello-world/"/>
-   <updated>2014-12-08T00:00:00-05:00</updated>
-   <id>http://rohitvarkey.github.io/2014/12/08/hello-world</id>
-   <content type="html">&lt;p&gt;This is my first ever post on the blog! So I thought I&amp;#39;d write a little on how I set this blog up.&lt;/p&gt;
+   <link href="http://cjamadagni.github.io/2014/12/08/hello-world/"/>
+   <updated>2014-12-08T00:00:00+05:30</updated>
+   <id>http://cjamadagni.github.io/2014/12/08/hello-world</id>
+   <content type="html">&lt;p&gt;This is my first ever post on the blog! So I thought I’d write a little on how I set this blog up.&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;http://pages.github.com&quot;&gt;GitHub Pages&lt;/a&gt; are built with &lt;a href=&quot;http://jekyllrb.com&quot;&gt;Jekyll&lt;/a&gt; and I spent the morning reading the Jekyll documentation. It is really well documented and makes it really easy to start creating a blog. The posts can be written in Markdown and is automatically converted to HTML. It also uses the Liquid templating language which is really similar to the Django templating language.&lt;/p&gt;
 
@@ -25,7 +447,7 @@
 
 &lt;p&gt;Getting the theme integrated was easy as all you had to was to download the GitHub repo and copy it to the blog directory. I then changed the values in the _config.yaml file to ones specific to my site. So now it was almost done. But I wanted to add a archive link also. That was easy using the templating language. And then all that was left was to write this post!&lt;/p&gt;
 
-&lt;p&gt;You can find the code &lt;a href=&quot;http://github.com/rohitvarkey/rohitvarkey.github.io&quot;&gt;here&lt;/a&gt;. Thanks for reading! &lt;/p&gt;
+&lt;p&gt;You can find the code &lt;a href=&quot;http://github.com/rohitvarkey/rohitvarkey.github.io&quot;&gt;here&lt;/a&gt;. Thanks for reading!&lt;/p&gt;
 </content>
  </entry>
  

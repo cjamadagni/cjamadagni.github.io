@@ -7,14 +7,12 @@ tagline:          'cjamadagni authors here'
 description:      'I read about code. Write a little of it too! This blog lists my experiences while playing with code.'
 url:              http://cjamadagni.github.io
 baseurl:          /
-gems:             
-                  -jemoji
+
 
 author:
   name:           'Chirag Jamadagni'
   url:            https://linkedin.com/in/cjamadagni
 
-paginate:         5
 
 # Custom vars
 github:
