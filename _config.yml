@@ -2,9 +2,6 @@
 permalink:        pretty
 
 # Setup
-title:            Chirag Jamadagni
-tagline:          'cjamadagni authors here'
-description:      'Computer Science Grad Student'
 url:              http://cjamadagni.github.io
 baseurl:          /
 
