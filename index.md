@@ -2,8 +2,7 @@
 layout: default
 title: Home
 ---
-
-# Chirag Jamadagni's Website
+# About
 
 Hey there! This is Rohit Varkey Thankachan's blog, a Computer Science Masters student at [Georgia Tech](http://www.gatech.edu/).
 I am passionate about the open source and am a Pythonista. I've contributed to several packages in the Julia community. My resume can be found [here]({{site.url}}/public/Rohit-Varkey-Thankachan-Resume.pdf). 
