@@ -2,20 +2,20 @@
 permalink:        pretty
 
 # Setup
-title:            Rohit Varkey Thankachan's blog!
-tagline:          'rohitvarkey authors here'
+title:            Chirag Jamadagni's Website!
+tagline:          'cjamadagni authors here'
 description:      'I read about code. Write a little of it too! This blog lists my experiences while playing with code.'
-url:              http://rohitvarkey.github.io
+url:              http://cjamadagni.github.io
 baseurl:          /
 gems:             
                   -jemoji
 
 author:
-  name:           'Rohit Varkey Thankachan'
-  url:            https://twitter.com/rohitvarkey
+  name:           'Chirag Jamadagni'
+  url:            https://linkedin.com/in/cjamadagni
 
 paginate:         5
 
 # Custom vars
 github:
-  repo:           https://github.com/rohitvarkey
+  repo:           https://github.com/cjamadagni
