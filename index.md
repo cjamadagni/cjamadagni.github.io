@@ -1,17 +1,13 @@
-Hey there! This is Chirag Jamadagni, a Computer Science Masters student at [Georgia Tech](http://www.gatech.edu/).
-I am passionate about the open source and am a Pythonista. I've contributed to several packages in the Julia community. My resume can be found [here]({{site.url}}/public/Rohit-Varkey-Thankachan-Resume.pdf). 
+Hey there! My name is Chirag Jamadagni and I am a Computer Science Master's student at [Georgia Tech] (http://www.gatech.edu/). Developing new applications/systems and improving existing ones gives me a thrill and I love all the challenges associated with doing so. Some of the stuff I've worked on can be found on my [GitHub repository](http://github.com/cjamadagni), and my resume can be found [here]({{site.url}}/public/Rohit-Varkey-Thankachan-Resume.pdf).
 
-I completed my undergrad at [National Institute of Technology Karnataka, Surathkal](http://nitk.ac.in) in May 2016.
+I completed my Bachelor's in Technology at [National Institute of Technology Karnataka, Surathkal](http://nitk.ac.in) in May 2017, and majored in Computer Engineering.
 
-I enjoy soccer and am also a Kerala Blasters and Manchester United fan!
-
-You can find my projects on my [Github repository](http://github.com/rohitvarkey).
+I was born and grew up in Stamford, Connecticut, and then moved to Bangalore, India for high school and undergrad. Since I am a US citizen, I don't have any visa issues and I don't require visa sponsorship to work in the US.
 
 You can also find me on :
 
-* [Facebook](https://facebook.com/rohitvarkey)
-* [Twitter](https://twitter.com/rohitvarkey)
-* [LinkedIn](https://www.linkedin.com/in/rohitvarkey)
+* [LinkedIn](https://linkedin.com/in/cjamadagni)
+* [Facebook](https://www.facebook.com/chirag.jamadagni.7)
 
 This blog is built using [Jekyll](http://jekyllrb.com) using the brilliant [Hyde](http://hyde.getpoole.com) theme and hosted on [Github Pages](http://pages.github.com)!
 
