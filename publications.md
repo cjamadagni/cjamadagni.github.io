@@ -1,21 +1,12 @@
 ---
 layout: page
-title: 
+title: Publications
 ---
 
-Hey there! This is Rohit Varkey Thankachan's blog, a Computer Science Masters student at [Georgia Tech](http://www.gatech.edu/).
-I am passionate about the open source and am a Pythonista. I've contributed to several packages in the Julia community. My resume can be found [here]({{site.url}}/public/Rohit-Varkey-Thankachan-Resume.pdf). 
 
-I completed my undergrad at [National Institute of Technology Karnataka, Surathkal](http://nitk.ac.in) in May 2016.
+### Dynamic 3D Graph Visualizations in Julia 
 
-I enjoy soccer and am also a Kerala Blasters and Manchester United fan!
+A major problem with graph visualization libraries and packages is the lack of interactivity and 3D visualization. This makes understanding and analyzing complex graphs and topologies difficult. Existing packages and tools which do provide similar functionality are difficult to use, install, integrate and have many dependencies. This paper discusses Net-workViz.jl, a Julia package which addresses the issues of existing graph visualization platforms while ensuring simplicity, efficiency, a diverse set of features and easy integration with other packages. This package supports two- and three-dimensional visualizations and uses a force-directed graph drawing approach to generate aesthetically pleasing and easy-to-use graphs. The library was built entirely in Julia due to its good documentation, large open source community and in order to fully utilize the inherent advantages provided by the language. As graph visualizations are important for analyzing complex networks, testing routing algorithms, as teaching aids, etc., we believe that NetworkViz.jl will be of integral use in the fields of research and education.
 
-You can find my projects on my [Github repository](http://github.com/rohitvarkey).
 
-You can also find me on :
-
-* [Facebook](https://facebook.com/rohitvarkey)
-* [Twitter](https://twitter.com/rohitvarkey)
-* [LinkedIn](https://www.linkedin.com/in/rohitvarkey)
-
-This blog is built using [Jekyll](http://jekyllrb.com) using the brilliant [Hyde](http://hyde.getpoole.com) theme and hosted on [Github Pages](http://pages.github.com)!
+<center>[View Paper](http://dl.acm.org/citation.cfm?id=3015595)</center>
