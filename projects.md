@@ -20,7 +20,7 @@ title: Projects
 
 ### GCPiN: Group Caching for Privacy in NDN
 * Proposed a new network architecture for Named Data Networking to increase the privacy of cached content (Content Store) with minimal performance losses.
-* Complete report can be found [here](({{site.url}}/public/GCPiN.pdf)).
+* Complete report can be found [here]({{site.url}}/public/GCPiN.pdf).
 
 ### Secure Chat
 * Developed a secure, web-based chat, video and file transfer application using webRTC.
