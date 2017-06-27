@@ -1,6 +1,4 @@
----
-title: About
----
+# About
 Hey there! My name is Chirag Jamadagni and I am a Computer Science Master's student at [Georgia Tech](http://www.gatech.edu/). Developing new applications/systems and improving existing ones gives me a thrill and I love all the challenges associated with doing so. 
 
 Some of the stuff I've worked on can be found on my [GitHub repository](http://github.com/cjamadagni), and my resume can be found [here]({{site.url}}/public/Rohit-Varkey-Thankachan-Resume.pdf).
