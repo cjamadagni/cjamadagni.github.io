@@ -14,7 +14,7 @@ title: Projects
 * Developed various frontend components in AngularJS.
 
 ### NetworkViz.jl
-* Co-created a Julia [package](href="https://github.com/abhijithanilkumar/NetworkViz.jl) to visualize graphs in 3D.
+* Co-created a Julia [package](https://github.com/abhijithanilkumar/NetworkViz.jl) to visualize graphs in 3D.
 * This package renders graphs using ThreeJS.jl, and is tightly coupled with LightGraphs.jl.
 * This package was presented at JuliaCon-MIT 2016.
 
