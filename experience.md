@@ -20,5 +20,4 @@ title: Experience
 * Member of the Cloud Services team.
 * Developed Liferay portlets (in Java) to monitor servers and onboard new customers.
 * Developed Selenium WebDriver scripts (in Java) to test various portal functionalities.
-* Worked on integrating NagiosXI system monitoring tool with the cloud portal.
 * Developed various UI components (in JavaScript) for the cloud portal.
