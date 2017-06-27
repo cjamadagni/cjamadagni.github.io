@@ -1,6 +1,6 @@
 ---
 layout: page
-title: About
+title: Varkey
 ---
 
 Hey there! This is Rohit Varkey Thankachan's blog, a Computer Science Masters student at [Georgia Tech](http://www.gatech.edu/).
