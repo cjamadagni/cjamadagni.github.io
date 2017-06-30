@@ -20,7 +20,7 @@ title: Projects
 
 ### GCPiN: Group Caching for Privacy in NDN
 * Proposed a new network architecture for Named Data Networking to increase the privacy of cached content (Content Store) with minimal performance losses.
-* Complete report can be found [here](http://www.cjamadagni.github.io/public/GCPiN.pdf).
+* Complete report can be found [here](https://github.com/cjamadagni/GCPiN).
 
 ### Secure Chat
 * Developed a secure, web-based chat, video and file transfer application using webRTC.
