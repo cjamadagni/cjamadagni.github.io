@@ -1,6 +1,6 @@
 Hey there! My name is Chirag Jamadagni and I am a Computer Science Master's student at [Georgia Tech](http://www.gatech.edu/). Developing new applications/systems and improving existing ones gives me a thrill and I love all the challenges associated with doing so. 
 
-Some of the stuff I've worked on can be found on my [GitHub repository](http://github.com/cjamadagni), and my resume can be found [here]({{site.url}}/public/Rohit-Varkey-Thankachan-Resume.pdf).
+Some of the stuff I've worked on can be found on my [GitHub repository](http://github.com/cjamadagni), and my resume can be found [here]({{site.url}}/public/ChiragCV3.pdf).
 
 I completed my Bachelor's in Technology at [National Institute of Technology Karnataka, Surathkal](http://nitk.ac.in) in May 2017, and majored in Computer Engineering.
 
